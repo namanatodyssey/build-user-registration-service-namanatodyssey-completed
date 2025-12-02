@@ -4,6 +4,10 @@ import com.example.userregistration.dto.UserRegistrationRequest;
 import com.example.userregistration.dto.UserRegistrationResponse;
 import com.example.userregistration.model.User;
 import com.example.userregistration.repository.UserRepository;
+import com.example.userregistration.exception.ApiError;
+
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,8 +23,18 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserRegistrationResponse registerUser(UserRegistrationRequest request) {
-        // Implementation to be completed by candidate
-        return null;
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalStateException("Email already exists");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setEmail(request.getEmail());
+        user.setPassword(request.getPassword());
+        user.setAge(request.getAge());
+        userRepository.save(user);
+        backgroundJobService.runPostRegistrationTasks(user);
+        return mapToResponse(user);
     }
 
     private UserRegistrationResponse mapToResponse(User user) {
